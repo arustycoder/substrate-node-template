@@ -33,7 +33,7 @@ pub mod pallet {
 	pub enum Event<T: Config> {
 		ClaimCreated(T::AccountId, Vec<u8>),
 		ClaimRevoked(T::AccountId, Vec<u8>),
-		ClaimTransfered(T::AccountId, T::AccountId, Vec<u8>),
+		ClaimTransferred(T::AccountId, T::AccountId, Vec<u8>),
 	}
 
 	#[pallet::error]
@@ -108,7 +108,7 @@ pub mod pallet {
 				(dest.clone(), frame_system::Pallet::<T>::block_number()),
 			);
 
-			Self::deposit_event(Event::ClaimTransfered(sender, dest, claim));
+			Self::deposit_event(Event::ClaimTransferred(sender, dest, claim));
 
 			Ok(().into())
 		}
