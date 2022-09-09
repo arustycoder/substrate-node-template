@@ -43,6 +43,8 @@ use pallet_transaction_payment::CurrencyAdapter;
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
 
+/// Import the kitties pallet.
+pub use pallet_kitties;
 /// Import the template pallet.
 pub use pallet_template;
 
@@ -276,6 +278,12 @@ impl pallet_poe::Config for Runtime {
 	type Event = Event;
 }
 
+/// Configure the pallet-kitties in pallets/kitties.
+impl pallet_kitties::Config for Runtime {
+	type Event = Event;
+	type Randomness = RandomnessCollectiveFlip;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub struct Runtime
@@ -296,6 +304,7 @@ construct_runtime!(
 		TemplateModule: pallet_template,
 		// Include the custom logic from the pallet-poe in the runtime.
 		PoeModule: pallet_poe,
+		KittiesModule: pallet_kitties,
 	}
 );
 

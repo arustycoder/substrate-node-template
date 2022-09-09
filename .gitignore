@@ -17,3 +17,5 @@
 
 # Jetbrain ide
 .idea
+
+Cargo.lock
