@@ -280,6 +280,7 @@ impl pallet_poe::Config for Runtime {
 
 /// Configure the pallet-kitties in pallets/kitties.
 impl pallet_kitties::Config for Runtime {
+	type KittyIndex = u64;
 	type Event = Event;
 	type Randomness = RandomnessCollectiveFlip;
 }
