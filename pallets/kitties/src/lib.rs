@@ -28,6 +28,8 @@ pub mod pallet {
 			+ MaxEncodedLen
 			+ TypeInfo;
 
+		#[pallet::constant]
+		type MaxOwnedKitties: Get<u32>;
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		type Randomness: Randomness<Self::Hash, Self::BlockNumber>;
 	}
@@ -48,6 +50,16 @@ pub mod pallet {
 	#[pallet::getter(fn kitty_owner)]
 	pub type KittyOwner<T: Config> =
 		StorageMap<_, Blake2_128Concat, <T as Config>::KittyIndex, T::AccountId>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn owned_kitties)]
+	pub type OwnedKitties<T: Config> = StorageMap<
+		_,
+		Blake2_128Concat,
+		T::AccountId,
+		BoundedVec<<T as Config>::KittyIndex, T::MaxOwnedKitties>,
+		ValueQuery,
+	>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -83,7 +95,8 @@ pub mod pallet {
 
 			Kitties::<T>::insert(kitty_id, &kitty);
 			KittyOwner::<T>::insert(kitty_id, &who);
-			NextKittyId::<T>::set(kitty_id + T::KittyIndex::from(1u32));
+			NextKittyId::<T>::set(kitty_id + <T as Config>::KittyIndex::from(1u32));
+			OwnedKitties::<T>::mutate(&who, |kitties| kitties.try_push(kitty_id).unwrap());
 
 			Self::deposit_event(Event::KittyCreated(who, kitty_id, kitty));
 			Ok(())
@@ -114,7 +127,11 @@ pub mod pallet {
 
 			Kitties::<T>::insert(kitty_id, &next_kitty);
 			KittyOwner::<T>::insert(kitty_id, &who);
-			NextKittyId::<T>::set(kitty_id + T::KittyIndex::from(1u32));
+			NextKittyId::<T>::set(kitty_id + <T as Config>::KittyIndex::from(1u32));
+			// FixMe: handle error
+			OwnedKitties::<T>::mutate(&who, |kitties| {
+				let _ = kitties.try_push(kitty_id);
+			});
 
 			Self::deposit_event(Event::KittyBreed(
 				who, kitty_id_1, kitty_id_2, kitty_id, next_kitty,
@@ -138,6 +155,22 @@ pub mod pallet {
 			);
 
 			KittyOwner::<T>::insert(kitty_id, &receiver);
+			OwnedKitties::<T>::mutate(&sender, |kitties| {
+				let idx = {
+					let mut found = None;
+					for (i, x) in kitties.iter().enumerate() {
+						if x == &kitty_id {
+							found = Some(i);
+							break;
+						}
+					}
+					found
+				};
+				if let Some(idx) = idx {
+					kitties.remove(idx);
+				}
+			});
+			OwnedKitties::<T>::mutate(&receiver, |kitties| kitties.try_push(kitty_id).unwrap());
 
 			Self::deposit_event(Event::KittyTransferred(sender, kitty_id, receiver));
 
