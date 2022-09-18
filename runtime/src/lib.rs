@@ -280,10 +280,12 @@ impl pallet_poe::Config for Runtime {
 
 /// Configure the pallet-kitties in pallets/kitties.
 impl pallet_kitties::Config for Runtime {
+	type Currency = Balances;
 	type KittyIndex = u64;
 	type MaxOwnedKitties = ConstU32<1024>;
 	type Event = Event;
 	type Randomness = RandomnessCollectiveFlip;
+	type KittyPrice = ConstU128<512>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.

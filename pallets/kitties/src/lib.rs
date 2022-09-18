@@ -5,6 +5,7 @@ pub use pallet::*;
 #[frame_support::pallet]
 pub mod pallet {
 	use codec::Codec;
+	use frame_support::traits::{Currency, ReservableCurrency};
 	use frame_support::{pallet_prelude::*, traits::Randomness};
 	use frame_system::pallet_prelude::*;
 	use sp_io::hashing::blake2_128;
@@ -14,8 +15,14 @@ pub mod pallet {
 	#[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo, MaxEncodedLen)]
 	pub struct Kitty(pub [u8; 16]);
 
+	pub type BalanceOf<T> =
+		<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
+		/// The staking balance.
+		type Currency: Currency<Self::AccountId> + ReservableCurrency<Self::AccountId>;
+
 		type KittyIndex: Parameter
 			+ Bounded
 			+ Member
@@ -32,6 +39,7 @@ pub mod pallet {
 		type MaxOwnedKitties: Get<u32>;
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		type Randomness: Randomness<Self::Hash, Self::BlockNumber>;
+		type KittyPrice: Get<BalanceOf<Self>>;
 	}
 
 	#[pallet::pallet]
@@ -82,6 +90,7 @@ pub mod pallet {
 		SameKittyId,
 		NotKittyOwner,
 		TooManyKitties,
+		InsufficientBalance,
 	}
 
 	#[pallet::call]
@@ -89,10 +98,15 @@ pub mod pallet {
 		#[pallet::weight(10_000)]
 		pub fn create(origin: OriginFor<T>) -> DispatchResult {
 			let who = ensure_signed(origin)?;
+
 			let kitty_id = Self::get_next_id().map_err(|_| Error::<T>::InvalidKittyIndex)?;
 
 			let dna = Self::random_value(&who);
 			let kitty = Kitty(dna);
+
+			// FixMe: make the following operations atomic
+			T::Currency::reserve(&who, T::KittyPrice::get())
+				.map_err(|_| Error::<T>::InsufficientBalance)?;
 
 			Kitties::<T>::insert(kitty_id, &kitty);
 			KittyOwner::<T>::insert(kitty_id, &who);
@@ -129,6 +143,10 @@ pub mod pallet {
 
 			let next_kitty = Kitty(data);
 
+			// FixMe: make the following operations atomic
+			T::Currency::reserve(&who, T::KittyPrice::get())
+				.map_err(|_| Error::<T>::InsufficientBalance)?;
+
 			Kitties::<T>::insert(kitty_id, &next_kitty);
 			KittyOwner::<T>::insert(kitty_id, &who);
 			NextKittyId::<T>::set(kitty_id + <T as Config>::KittyIndex::from(1u32));
@@ -157,6 +175,11 @@ pub mod pallet {
 				KittyOwner::<T>::get(kitty_id) == Some(sender.clone()),
 				Error::<T>::NotKittyOwner
 			);
+
+			// FixMe: make the following operations atomic
+			T::Currency::reserve(&receiver, T::KittyPrice::get())
+				.map_err(|_| Error::<T>::InsufficientBalance)?;
+			T::Currency::unreserve(&sender, T::KittyPrice::get());
 
 			KittyOwner::<T>::insert(kitty_id, &receiver);
 			OwnedKitties::<T>::mutate(&sender, |kitties| {
