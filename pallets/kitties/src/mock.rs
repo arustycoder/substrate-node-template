@@ -54,7 +54,7 @@ impl system::Config for Test {
 
 impl pallet_kitties::Config for Test {
 	type KittyIndex = u8;
-	type MaxOwnedKitties = ConstU32<1024>;
+	type MaxOwnedKitties = ConstU32<64>;
 	type Event = Event;
 	type Randomness = RandomnessCollectiveFlip;
 }
