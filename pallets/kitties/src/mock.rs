@@ -1,8 +1,7 @@
 use crate as pallet_kitties;
-use frame_support::traits::{ConstU16, ConstU64, Currency};
+use frame_support::traits::{ConstU16, ConstU64};
 use frame_system as system;
 use sp_core::H256;
-use sp_runtime::traits::ConstU128;
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, ConstU32, IdentityLookup},
@@ -23,6 +22,8 @@ frame_support::construct_runtime!(
 		KittiesModule: pallet_kitties,
 	}
 );
+
+impl pallet_randomness_collective_flip::Config for Test {}
 
 impl system::Config for Test {
 	type BaseCallFilter = frame_support::traits::Everything;
@@ -52,12 +53,10 @@ impl system::Config for Test {
 }
 
 impl pallet_kitties::Config for Test {
-	type Currency = Balances;
 	type KittyIndex = u8;
 	type MaxOwnedKitties = ConstU32<1024>;
 	type Event = Event;
 	type Randomness = RandomnessCollectiveFlip;
-	type KittyPrice = ConstU128<512>;
 }
 
 // Build genesis storage according to the mock runtime.

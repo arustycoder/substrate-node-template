@@ -13,8 +13,9 @@ pub mod pallet {
 	use codec::Codec;
 	use frame_support::{pallet_prelude::*, traits::Randomness};
 	use frame_system::pallet_prelude::*;
+	use sp_arithmetic::traits::BaseArithmetic;
 	use sp_io::hashing::blake2_128;
-	use sp_runtime::traits::{AtLeast32BitUnsigned, Bounded};
+	use sp_runtime::traits::Bounded;
 	use sp_std::fmt::Debug;
 
 	#[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo, MaxEncodedLen)]
@@ -25,7 +26,7 @@ pub mod pallet {
 		type KittyIndex: Parameter
 			+ Bounded
 			+ Member
-			+ AtLeast32BitUnsigned
+			+ BaseArithmetic
 			+ Codec
 			+ Default
 			+ Copy
@@ -102,7 +103,7 @@ pub mod pallet {
 
 			Kitties::<T>::insert(kitty_id, &kitty);
 			KittyOwner::<T>::insert(kitty_id, &who);
-			NextKittyId::<T>::set(kitty_id + <T as Config>::KittyIndex::from(1u32));
+			NextKittyId::<T>::set(kitty_id + <T as Config>::KittyIndex::from(1u8));
 
 			OwnedKitties::<T>::mutate(&who, |kitties| {
 				kitties.try_push(kitty_id).map_err(|_| Error::<T>::TooManyKitties)
@@ -137,7 +138,7 @@ pub mod pallet {
 
 			Kitties::<T>::insert(kitty_id, &next_kitty);
 			KittyOwner::<T>::insert(kitty_id, &who);
-			NextKittyId::<T>::set(kitty_id + <T as Config>::KittyIndex::from(1u32));
+			NextKittyId::<T>::set(kitty_id + <T as Config>::KittyIndex::from(1u8));
 
 			OwnedKitties::<T>::mutate(&who, |kitties| {
 				kitties.try_push(kitty_id).map_err(|_| Error::<T>::TooManyKitties)
